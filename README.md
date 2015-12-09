@@ -8,3 +8,9 @@ Based on the Minix Frequency Switcher:
 - Modified to run on Kodi instead of XBMC.
 
 /sys/class/dysplay/mode needs to be writable.
+
+With Kodi supporting automatic rate switching, this addon in useful mainly for S802 boards that can't perform HDMI handshake,
+resulting in "null edid" in /sys/class/amhdmitx/amhdmitx0/disp_cap
+
+Kodi uses information in that virtual file to determine valid resolutions/refresh rates.
+Submited PR to Kodi to support manual override of "disp_cap" to try to circumvent the issue: https://github.com/xbmc/xbmc/pull/7257
