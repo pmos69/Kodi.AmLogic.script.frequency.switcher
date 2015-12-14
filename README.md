@@ -7,7 +7,7 @@ Based on the Minix Frequency Switcher:
 - Modified to run on all AmLogic boards.
 - Modified to run on Kodi instead of XBMC.
 
-/sys/class/dysplay/mode needs to be writable.
+/sys/class/display/mode needs to be writable.
 
 With Kodi supporting automatic rate switching, this addon in useful mainly for S802 boards that can't perform HDMI handshake,
 resulting in "null edid" in /sys/class/amhdmitx/amhdmitx0/disp_cap
