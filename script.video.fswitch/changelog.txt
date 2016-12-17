@@ -1,3 +1,6 @@
+v2.0.1
+- Added 4k
+
 v2
 - Runs on all AmLogic boards
 - Runs in Kodi

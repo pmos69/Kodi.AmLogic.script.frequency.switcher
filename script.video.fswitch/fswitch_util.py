@@ -23,10 +23,13 @@ def getSourceFPS():
     # get location of log file
     if fsconfig.osPlatform == 'Windows 7':
         logFileName = xbmc.translatePath('special://home\kodi.log')
-    
+
     else:
-        logFileName = xbmc.translatePath('special://temp/kodi.log')
-    
+        if os.path.isfile(xbmc.translatePath('special://temp/kodi.log')):
+            logFileName = xbmc.translatePath('special://temp/kodi.log')
+        else:
+            logFileName = xbmc.translatePath('special://temp/spmc.log')
+
     # wait 0.40 second for log file to update (with debug on W7: 0.35 not quite long enough for some files)
     xbmc.sleep(400)
     
@@ -116,7 +119,7 @@ def getPlatformType():
     if osPlatform == 'win32':
         osVariant = platform.system() + ' ' + platform.release()
 
-    elif osPlatform == 'linux3':
+    elif osPlatform == 'linux3' or osPlatform == 'linux4':
         productBrand = subprocess.Popen(['getprop', 'ro.product.brand'], stdout=subprocess.PIPE).communicate()[0].strip()
         productDevice = subprocess.Popen(['getprop', 'ro.product.device'], stdout=subprocess.PIPE).communicate()[0].strip()
         osVariant = productBrand + ' ' + productDevice
@@ -147,9 +150,11 @@ def getDisplayMode():
         if os.access(modeFile, os.R_OK):
             with open(modeFile, 'r') as modeFileHandle:      
                 amlogicMode = modeFileHandle.readline().strip()
-                
+
                 # convert AMLOGIC output mode to more descriptive mode
                 if amlogicMode == '1080p':
+                    outputMode = '1080p-60hz'
+                elif amlogicMode == '1080p60hz':
                     outputMode = '1080p-60hz'
                 elif amlogicMode == '1080p50hz':
                     outputMode = '1080p-50hz'
@@ -159,6 +164,12 @@ def getDisplayMode():
                     outputMode = '720p-60hz'
                 elif amlogicMode == '720p50hz':
                     outputMode = '720p-50hz'
+                elif amlogicMode == '2160p60hz420':
+                    outputMode = '4k2k-60hz'
+                elif amlogicMode == '2160p50hz420':
+                    outputMode = '4k2k-50hz'
+                elif amlogicMode == '2160p24hz':
+                    outputMode = '4k2k-24hz'
                 else:
                     outputMode = "unsupported"
                 
@@ -187,6 +198,7 @@ def getDisplayModeFileStatus():
         modeFile = modeFileWindows 
     else:
         modeFile = modeFileAndroid
+        subprocess.call(["su", "root", "chmod", "666", "/sys/class/display/mode"])
       
     # check file exists
     if os.path.isfile(modeFile):
@@ -216,7 +228,7 @@ def setDisplayMode(newOutputMode):
         
         # convert output mode to a valid AMLOGIC mode
         if newOutputMode == '1080p-60hz':
-            newAmlogicMode = '1080p'
+            newAmlogicMode = '1080p60hz'
         elif newOutputMode == '1080p-50hz':
             newAmlogicMode = '1080p50hz'
         elif newOutputMode == '1080p-24hz':
@@ -225,6 +237,12 @@ def setDisplayMode(newOutputMode):
             newAmlogicMode = '720p'
         elif newOutputMode == '720p-50hz':
             newAmlogicMode = '720p50hz'
+        elif newOutputMode == '4k2k-60hz':
+            newAmlogicMode = '2160p60hz420'
+        elif newOutputMode == '4k2k-50hz':
+            newAmlogicMode = '2160p50hz420'
+        elif newOutputMode == '4k2k-24hz':
+            newAmlogicMode = '2160p24hz'
         else:
             setModeStatus = 'Unsupported mode requested.'
             statusType = 'warn'
@@ -277,6 +295,7 @@ def setDisplayMode(newOutputMode):
                     # set new display mode
                     with open(modeFile, 'w') as modeFileHandle: 
                         modeFileHandle.write(newAmlogicMode)
+                        subprocess.call(["su", "root", "chmod", "644", "/sys/class/display/mode"])
                     
                     # save time display mode was changed
                     fsconfig.lastFreqChange = int(time.time())
@@ -284,7 +303,7 @@ def setDisplayMode(newOutputMode):
                     
                     setModeStatus = 'Frequency changed to ' + newFreq
                     statusType = 'info'
-     
+ 
     return setModeStatus, statusType
 
 def getCurrentFPS():
