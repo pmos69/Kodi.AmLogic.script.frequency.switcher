@@ -1,3 +1,6 @@
+v2.0.2
+- add preliminary support Kodi 17.0
+
 v2.0.1
 - Added 4k
 
