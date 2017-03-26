@@ -131,7 +131,7 @@ def getPlatformType():
     if osPlatform == 'win32':
         osVariant = platform.system() + ' ' + platform.release()
 
-    elif osPlatform == 'linux3' or osPlatform == 'linux4':
+    elif osPlatform == 'linux2' or osPlatform == 'linux3' or osPlatform == 'linux4':
         productBrand = subprocess.Popen(['getprop', 'ro.product.brand'], stdout=subprocess.PIPE).communicate()[0].strip()
         productDevice = subprocess.Popen(['getprop', 'ro.product.device'], stdout=subprocess.PIPE).communicate()[0].strip()
         osVariant = productBrand + ' ' + productDevice

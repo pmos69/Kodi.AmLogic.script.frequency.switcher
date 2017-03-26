@@ -21,7 +21,12 @@ class KeyListener(xbmcgui.WindowXMLDialog):
 
     # object creation
     def __new__(cls):
-        return super(KeyListener, cls).__new__(cls, "DialogKaiToast.xml", "")
+        try: 
+            version = xbmc.getInfoLabel('system.buildversion')
+            if version[0:2] >= "17":
+                return super(KeyListener, cls).__new__(cls, "DialogNotification.xml", "")
+            else :
+                return super(KeyListener, cls).__new__(cls, "DialogKaiToast.xml", "")
 
     # object initialization
     def __init__(self):
