@@ -112,7 +112,8 @@ def getSourceFPS():
     # check osPlatform linux2 (Krypton) 
     osPlatform, osVariant = getPlatformType()
 	
-    if osPlatform == 'linux2':
+    version = xbmc.getInfoLabel('system.buildversion')
+    if version[0:2] >= "17":
         videoFPSValue = xbmc.getInfoLabel('Player.Process(VideoFps)')
         videoFileName = os.path.join(xbmc.getInfoLabel('Player.Folderpath'), xbmc.getInfoLabel('Player.FileName'))
 
