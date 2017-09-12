@@ -15,20 +15,21 @@ def getSourceFPS():
     refVideoOpen = 'NOTICE: DVDPlayer: Opening: '
     refVideoFPSstart = 'NOTICE:  fps: '
     refVideoFPSend = ', pwidth: '
-    
+
     # initialize return values
     videoFileName = None
     videoFPSValue = None
     
     # get location of log file
-    if fsconfig.osPlatform == 'Windows 7':
+    if fsconfig.osPlatform[0:7] == 'Windows':
         logFileName = xbmc.translatePath('special://home\kodi.log')
-
     else:
-        if os.path.isfile(xbmc.translatePath('special://temp/kodi.log')):
-            logFileName = xbmc.translatePath('special://temp/kodi.log')
-        else:
+        if  os.path.isfile(xbmc.translatePath('special://temp/ftmc.log')):
+            logFileName = xbmc.translatePath('special://temp/ftmc.log')
+        elif os.path.isfile(xbmc.translatePath('special://temp/spmc.log')):
             logFileName = xbmc.translatePath('special://temp/spmc.log')
+        else:
+            logFileName = xbmc.translatePath('special://temp/kodi.log')
 
     # wait 0.40 second for log file to update (with debug on W7: 0.35 not quite long enough for some files)
     xbmc.sleep(400)
@@ -111,35 +112,42 @@ def getSourceFPS():
                              
     # check osPlatform linux2 (Krypton) 
     osPlatform, osVariant = getPlatformType()
-	
+
     version = xbmc.getInfoLabel('system.buildversion')
     if version[0:2] >= "17":
         videoFPSValue = xbmc.getInfoLabel('Player.Process(VideoFps)')
-        videoFileName = os.path.join(xbmc.getInfoLabel('Player.Folderpath'), xbmc.getInfoLabel('Player.FileName'))
+        videoFileName = xbmc.getInfoLabel('Player.Filenameandpath')
 
+    # only save FPS if not 0.000 (seen on one dvd-iso)
+    if videoFPSValue != '0.000':
         # save FPS for use in setDisplayModeAuto
         fsconfig.lastDetectedFps = videoFPSValue
         fsconfig.lastDetectedFile = videoFileName
         fsconfigutil.saveLastDetectedFps()
+    else:
+        videoFPSValue = None
 
+    # xbmc.log("MyNOTICE = videoFPSValue : " + videoFPSValue)
     return videoFileName, videoFPSValue
 
 def getPlatformType():
 # function for getting platform type
 
     osPlatform = sys.platform
-    
+
     if osPlatform == 'win32':
         osVariant = platform.system() + ' ' + platform.release()
 
-    elif osPlatform == 'linux2' or osPlatform == 'linux3' or osPlatform == 'linux4':
-        productBrand = subprocess.Popen(['getprop', 'ro.product.brand'], stdout=subprocess.PIPE).communicate()[0].strip()
-        productDevice = subprocess.Popen(['getprop', 'ro.product.device'], stdout=subprocess.PIPE).communicate()[0].strip()
-        osVariant = productBrand + ' ' + productDevice
-        
+    elif (osPlatform == 'linux2' or osPlatform == 'linux3' or osPlatform == 'linux4') and os.path.isfile("/sys/class/display/mode"):
+        try:
+            productBrand = subprocess.Popen(['getprop', 'ro.product.brand'], stdout=subprocess.PIPE).communicate()[0].strip()
+            productDevice = subprocess.Popen(['getprop', 'ro.product.device'], stdout=subprocess.PIPE).communicate()[0].strip()
+            osVariant = productBrand + ' ' + productDevice
+        except:
+            osVariant = platform.system() + ' ' + platform.release()
     else:
         osVariant = 'unsupported'
-    
+
     return osPlatform, osVariant
 
 def getDisplayMode():
@@ -152,7 +160,7 @@ def getDisplayMode():
     modeFileAndroid = "/sys/class/display/mode"
     modeFileWindows = "d:\\x8mode.txt"
  
-    if fsconfig.osPlatform == 'Windows 7':
+    if fsconfig.osPlatform[0:7] == 'Windows':
         modeFile = modeFileWindows 
     else:
         modeFile = modeFileAndroid
@@ -206,13 +214,18 @@ def getDisplayModeFileStatus():
     
     modeFileAndroid = "/sys/class/display/mode"
     modeFileWindows = "d:\\x8mode.txt"
- 
-    if fsconfig.osPlatform == 'Windows 7':
+
+    if fsconfig.osPlatform[0:7] == 'Windows':
         modeFile = modeFileWindows 
     else:
         modeFile = modeFileAndroid
-        subprocess.call(["su", "root", "chmod", "666", "/sys/class/display/mode"])
-      
+        try:
+            subprocess.call(["su", "root", "chmod", "666", "/sys/class/display/mode"])
+            subprocess.call(["su", "root", "chmod", "666", "/sys/class/video/contrast"])
+            subprocess.call(["su", "root", "chmod", "666", "/sys/class/video/brightness"])
+        except:
+            pass
+
     # check file exists
     if os.path.isfile(modeFile):
         # check file is writable
@@ -308,7 +321,7 @@ def setDisplayMode(newOutputMode):
                     # set new display mode
                     with open(modeFile, 'w') as modeFileHandle: 
                         modeFileHandle.write(newAmlogicMode)
-                        subprocess.call(["su", "root", "chmod", "644", "/sys/class/display/mode"])
+                        #subprocess.call(["su", "root", "chmod", "644", "/sys/class/display/mode"])
                     
                     # save time display mode was changed
                     fsconfig.lastFreqChange = int(time.time())

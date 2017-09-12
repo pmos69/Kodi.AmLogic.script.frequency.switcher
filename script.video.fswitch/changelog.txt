@@ -1,5 +1,8 @@
+v2.0.5
+- Improved code to detect host operating system
+
 v2.0.4
-- Fix auto switching detection for SPMC 16.6.81
+- Fix auto switching SPMC 16.6.81
 
 v2.0.3
 - fix keymaps compatibility with Kodi 17.0
