@@ -159,7 +159,7 @@ def getDisplayMode():
     
     modeFileAndroid = "/sys/class/display/mode"
     modeFileWindows = "d:\\x8mode.txt"
- 
+	
     if fsconfig.osPlatform[0:7] == 'Windows':
         modeFile = modeFileWindows 
     else:
@@ -221,6 +221,7 @@ def getDisplayModeFileStatus():
         modeFile = modeFileAndroid
         try:
             subprocess.call(["su", "root", "chmod", "666", "/sys/class/display/mode"])
+            subprocess.call(["su", "root", "chmod", "666", "/sys/class/amhdmitx/amhdmitx0/hdcp_mode"])
             subprocess.call(["su", "root", "chmod", "666", "/sys/class/video/contrast"])
             subprocess.call(["su", "root", "chmod", "666", "/sys/class/video/brightness"])
         except:
@@ -288,7 +289,7 @@ def setDisplayMode(newOutputMode):
         # get new frequency
         freqSplit = newOutputMode.find('-') + 1
         newFreq = newOutputMode[freqSplit:len(newOutputMode)]
-    
+
         # current output mode is the same as new output mode
         if currentOutputMode == newOutputMode:
             setModeStatus = 'Frequency already set to ' + newFreq 
@@ -304,7 +305,6 @@ def setDisplayMode(newOutputMode):
              
             # new resolution is the same as the current resolution
             else: 
-             
                 fsconfigutil.loadLastFreqChangeSetting()
              
                 # check that at least 4 seconds has elapsed since the last frequency change
@@ -321,15 +321,17 @@ def setDisplayMode(newOutputMode):
                     # set new display mode
                     with open(modeFile, 'w') as modeFileHandle: 
                         modeFileHandle.write(newAmlogicMode)
-                        #subprocess.call(["su", "root", "chmod", "644", "/sys/class/display/mode"])
-                    
+
                     # save time display mode was changed
                     fsconfig.lastFreqChange = int(time.time())
                     fsconfigutil.saveLastFreqChangeSetting()
                     
                     setModeStatus = 'Frequency changed to ' + newFreq
                     statusType = 'info'
- 
+
+        with open("/sys/class/amhdmitx/amhdmitx0/hdcp_mode", 'w') as modeFileamhdmitx:
+            modeFileamhdmitx.write('11')
+					
     return setModeStatus, statusType
 
 def getCurrentFPS():
