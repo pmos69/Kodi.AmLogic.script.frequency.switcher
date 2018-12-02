@@ -179,16 +179,24 @@ def getDisplayMode():
                     outputMode = '1080p-60hz'
                 elif amlogicMode == '1080p50hz':
                     outputMode = '1080p-50hz'
+                elif amlogicMode == '1080p30hz':
+                    outputMode = '1080p-30hz'
+                elif amlogicMode == '1080p25hz':
+                    outputMode = '1080p-25hz'
                 elif amlogicMode == '1080p24hz':
                     outputMode = '1080p-24hz'
                 elif amlogicMode == '720p':
                     outputMode = '720p-60hz'
                 elif amlogicMode == '720p50hz':
                     outputMode = '720p-50hz'
-                elif amlogicMode == '2160p60hz420':
+                elif amlogicMode == '2160p60hz':
                     outputMode = '4k2k-60hz'
-                elif amlogicMode == '2160p50hz420':
+                elif amlogicMode == '2160p50hz':
                     outputMode = '4k2k-50hz'
+                elif amlogicMode == '2160p30hz':
+                    outputMode = '4k2k-30hz'
+                elif amlogicMode == '2160p25hz':
+                    outputMode = '4k2k-25hz'
                 elif amlogicMode == '2160p24hz':
                     outputMode = '4k2k-24hz'
                 else:
@@ -258,6 +266,10 @@ def setDisplayMode(newOutputMode):
             newAmlogicMode = '1080p60hz'
         elif newOutputMode == '1080p-50hz':
             newAmlogicMode = '1080p50hz'
+        elif newOutputMode == '1080p-30hz':
+            newAmlogicMode = '1080p30hz'
+        elif newOutputMode == '1080p-25hz':
+            newAmlogicMode = '1080p25hz'
         elif newOutputMode == '1080p-24hz':
             newAmlogicMode = '1080p24hz'
         elif newOutputMode == '720p-60hz':
@@ -265,9 +277,13 @@ def setDisplayMode(newOutputMode):
         elif newOutputMode == '720p-50hz':
             newAmlogicMode = '720p50hz'
         elif newOutputMode == '4k2k-60hz':
-            newAmlogicMode = '2160p60hz420'
+            newAmlogicMode = '2160p60hz'
         elif newOutputMode == '4k2k-50hz':
-            newAmlogicMode = '2160p50hz420'
+            newAmlogicMode = '2160p50hz'
+        elif newOutputMode == '4k2k-30hz':
+            newAmlogicMode = '2160p30hz'
+        elif newOutputMode == '4k2k-25hz':
+            newAmlogicMode = '2160p25hz'
         elif newOutputMode == '4k2k-24hz':
             newAmlogicMode = '2160p24hz'
         else:
@@ -404,6 +420,8 @@ def setDisplayModeAuto():
             
         mode60hz = currentRes + '-60hz'
         mode50hz = currentRes + '-50hz'
+        mode30hz = currentRes + '-30hz'
+        mode25hz = currentRes + '-25hz'
         mode24hz = currentRes + '-24hz'
         
         autoSync = []
@@ -420,7 +438,19 @@ def setDisplayModeAuto():
                                (fsconfig.edit50hzFps2, mode50hz), 
                                (fsconfig.edit50hzFps3, mode50hz), 
                                (fsconfig.edit50hzFps4, mode50hz)])
+
+        if fsconfig.radioAuto30hz:
+            syncConfig.extend([(fsconfig.edit30hzFps1, mode30hz), 
+                               (fsconfig.edit30hzFps2, mode30hz), 
+                               (fsconfig.edit30hzFps3, mode30hz), 
+                               (fsconfig.edit30hzFps4, mode30hz)])
              
+        if fsconfig.radioAuto25hz:
+            syncConfig.extend([(fsconfig.edit25hzFps1, mode25hz), 
+                               (fsconfig.edit25hzFps2, mode25hz), 
+                               (fsconfig.edit25hzFps3, mode25hz), 
+                               (fsconfig.edit25hzFps4, mode25hz)])
+
         if fsconfig.radioAuto24hz:
             syncConfig.extend([(fsconfig.edit24hzFps1, mode24hz), 
                                (fsconfig.edit24hzFps2, mode24hz),
