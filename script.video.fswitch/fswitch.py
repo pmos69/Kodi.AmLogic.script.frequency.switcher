@@ -21,10 +21,24 @@ class Main:
         # otherwise select mode based on the first argument 
         else:
             scriptArg = sys.argv[1]
-                            
-            if scriptArg == '1080p-60hz':
+
+            if scriptArg == '4k2k-60hz':
                 scriptMode = 'SetFreq'              
+            elif scriptArg == '4k2k-50hz':
+                scriptMode = 'SetFreq'
+            elif scriptArg == '4k2k-30hz':
+                scriptMode = 'SetFreq'
+            elif scriptArg == '4k2k-25hz':
+                scriptMode = 'SetFreq'
+            elif scriptArg == '4k2k-24hz':
+                scriptMode = 'SetFreq'
+            elif scriptArg == '1080p-60hz':
+                scriptMode = 'SetFreq'
             elif scriptArg == '1080p-50hz':
+                scriptMode = 'SetFreq'
+            elif scriptArg == '1080p-30hz':
+                scriptMode = 'SetFreq'
+            elif scriptArg == '1080p-25hz':
                 scriptMode = 'SetFreq'
             elif scriptArg == '1080p-24hz':
                 scriptMode = 'SetFreq'

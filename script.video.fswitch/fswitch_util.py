@@ -15,18 +15,22 @@ def getSourceFPS():
     refVideoOpen = 'NOTICE: DVDPlayer: Opening: '
     refVideoFPSstart = 'NOTICE:  fps: '
     refVideoFPSend = ', pwidth: '
-    
+
     # initialize return values
     videoFileName = None
     videoFPSValue = None
     
     # get location of log file
-    if fsconfig.osPlatform == 'Windows 7':
+    if fsconfig.osPlatform[0:7] == 'Windows':
         logFileName = xbmc.translatePath('special://home\kodi.log')
-    
     else:
-        logFileName = xbmc.translatePath('special://temp/kodi.log')
-    
+        if  os.path.isfile(xbmc.translatePath('special://temp/ftmc.log')):
+            logFileName = xbmc.translatePath('special://temp/ftmc.log')
+        elif os.path.isfile(xbmc.translatePath('special://temp/spmc.log')):
+            logFileName = xbmc.translatePath('special://temp/spmc.log')
+        else:
+            logFileName = xbmc.translatePath('special://temp/kodi.log')
+
     # wait 0.40 second for log file to update (with debug on W7: 0.35 not quite long enough for some files)
     xbmc.sleep(400)
     
@@ -106,24 +110,44 @@ def getSourceFPS():
             # found video open and FPS (if not 0.000) - stop parsing the list
             break
                              
+    # check osPlatform linux2 (Krypton) 
+    osPlatform, osVariant = getPlatformType()
+
+    version = xbmc.getInfoLabel('system.buildversion')
+    if version[0:2] >= "17":
+        videoFPSValue = xbmc.getInfoLabel('Player.Process(VideoFps)')
+        videoFileName = xbmc.getInfoLabel('Player.Filenameandpath')
+
+    # only save FPS if not 0.000 (seen on one dvd-iso)
+    if videoFPSValue != '0.000':
+        # save FPS for use in setDisplayModeAuto
+        fsconfig.lastDetectedFps = videoFPSValue
+        fsconfig.lastDetectedFile = videoFileName
+        fsconfigutil.saveLastDetectedFps()
+    else:
+        videoFPSValue = None
+
+    # xbmc.log("MyNOTICE = videoFPSValue : " + videoFPSValue)
     return videoFileName, videoFPSValue
 
 def getPlatformType():
 # function for getting platform type
 
     osPlatform = sys.platform
-    
+
     if osPlatform == 'win32':
         osVariant = platform.system() + ' ' + platform.release()
 
-    elif osPlatform == 'linux3':
-        productBrand = subprocess.Popen(['getprop', 'ro.product.brand'], stdout=subprocess.PIPE).communicate()[0].strip()
-        productDevice = subprocess.Popen(['getprop', 'ro.product.device'], stdout=subprocess.PIPE).communicate()[0].strip()
-        osVariant = productBrand + ' ' + productDevice
-        
+    elif (osPlatform == 'linux2' or osPlatform == 'linux3' or osPlatform == 'linux4') and os.path.isfile("/sys/class/display/mode"):
+        try:
+            productBrand = subprocess.Popen(['getprop', 'ro.product.brand'], stdout=subprocess.PIPE).communicate()[0].strip()
+            productDevice = subprocess.Popen(['getprop', 'ro.product.device'], stdout=subprocess.PIPE).communicate()[0].strip()
+            osVariant = productBrand + ' ' + productDevice
+        except:
+            osVariant = platform.system() + ' ' + platform.release()
     else:
         osVariant = 'unsupported'
-    
+
     return osPlatform, osVariant
 
 def getDisplayMode():
@@ -135,8 +159,8 @@ def getDisplayMode():
     
     modeFileAndroid = "/sys/class/display/mode"
     modeFileWindows = "d:\\x8mode.txt"
- 
-    if fsconfig.osPlatform == 'Windows 7':
+	
+    if fsconfig.osPlatform[0:7] == 'Windows':
         modeFile = modeFileWindows 
     else:
         modeFile = modeFileAndroid
@@ -147,18 +171,34 @@ def getDisplayMode():
         if os.access(modeFile, os.R_OK):
             with open(modeFile, 'r') as modeFileHandle:      
                 amlogicMode = modeFileHandle.readline().strip()
-                
+
                 # convert AMLOGIC output mode to more descriptive mode
                 if amlogicMode == '1080p':
                     outputMode = '1080p-60hz'
+                elif amlogicMode == '1080p60hz':
+                    outputMode = '1080p-60hz'
                 elif amlogicMode == '1080p50hz':
                     outputMode = '1080p-50hz'
+                elif amlogicMode == '1080p30hz':
+                    outputMode = '1080p-30hz'
+                elif amlogicMode == '1080p25hz':
+                    outputMode = '1080p-25hz'
                 elif amlogicMode == '1080p24hz':
                     outputMode = '1080p-24hz'
                 elif amlogicMode == '720p':
                     outputMode = '720p-60hz'
                 elif amlogicMode == '720p50hz':
                     outputMode = '720p-50hz'
+                elif amlogicMode == '2160p60hz':
+                    outputMode = '4k2k-60hz'
+                elif amlogicMode == '2160p50hz':
+                    outputMode = '4k2k-50hz'
+                elif amlogicMode == '2160p30hz':
+                    outputMode = '4k2k-30hz'
+                elif amlogicMode == '2160p25hz':
+                    outputMode = '4k2k-25hz'
+                elif amlogicMode == '2160p24hz':
+                    outputMode = '4k2k-24hz'
                 else:
                     outputMode = "unsupported"
                 
@@ -182,12 +222,19 @@ def getDisplayModeFileStatus():
     
     modeFileAndroid = "/sys/class/display/mode"
     modeFileWindows = "d:\\x8mode.txt"
- 
-    if fsconfig.osPlatform == 'Windows 7':
+
+    if fsconfig.osPlatform[0:7] == 'Windows':
         modeFile = modeFileWindows 
     else:
         modeFile = modeFileAndroid
-      
+        try:
+            subprocess.call(["su", "root", "chmod", "666", "/sys/class/display/mode"])
+            subprocess.call(["su", "root", "chmod", "666", "/sys/class/amhdmitx/amhdmitx0/hdcp_mode"])
+            subprocess.call(["su", "root", "chmod", "666", "/sys/class/video/contrast"])
+            subprocess.call(["su", "root", "chmod", "666", "/sys/class/video/brightness"])
+        except:
+            pass
+
     # check file exists
     if os.path.isfile(modeFile):
         # check file is writable
@@ -216,15 +263,29 @@ def setDisplayMode(newOutputMode):
         
         # convert output mode to a valid AMLOGIC mode
         if newOutputMode == '1080p-60hz':
-            newAmlogicMode = '1080p'
+            newAmlogicMode = '1080p60hz'
         elif newOutputMode == '1080p-50hz':
             newAmlogicMode = '1080p50hz'
+        elif newOutputMode == '1080p-30hz':
+            newAmlogicMode = '1080p30hz'
+        elif newOutputMode == '1080p-25hz':
+            newAmlogicMode = '1080p25hz'
         elif newOutputMode == '1080p-24hz':
             newAmlogicMode = '1080p24hz'
         elif newOutputMode == '720p-60hz':
             newAmlogicMode = '720p'
         elif newOutputMode == '720p-50hz':
             newAmlogicMode = '720p50hz'
+        elif newOutputMode == '4k2k-60hz':
+            newAmlogicMode = '2160p60hz'
+        elif newOutputMode == '4k2k-50hz':
+            newAmlogicMode = '2160p50hz'
+        elif newOutputMode == '4k2k-30hz':
+            newAmlogicMode = '2160p30hz'
+        elif newOutputMode == '4k2k-25hz':
+            newAmlogicMode = '2160p25hz'
+        elif newOutputMode == '4k2k-24hz':
+            newAmlogicMode = '2160p24hz'
         else:
             setModeStatus = 'Unsupported mode requested.'
             statusType = 'warn'
@@ -244,7 +305,7 @@ def setDisplayMode(newOutputMode):
         # get new frequency
         freqSplit = newOutputMode.find('-') + 1
         newFreq = newOutputMode[freqSplit:len(newOutputMode)]
-    
+
         # current output mode is the same as new output mode
         if currentOutputMode == newOutputMode:
             setModeStatus = 'Frequency already set to ' + newFreq 
@@ -260,7 +321,6 @@ def setDisplayMode(newOutputMode):
              
             # new resolution is the same as the current resolution
             else: 
-             
                 fsconfigutil.loadLastFreqChangeSetting()
              
                 # check that at least 4 seconds has elapsed since the last frequency change
@@ -277,14 +337,17 @@ def setDisplayMode(newOutputMode):
                     # set new display mode
                     with open(modeFile, 'w') as modeFileHandle: 
                         modeFileHandle.write(newAmlogicMode)
-                    
+
                     # save time display mode was changed
                     fsconfig.lastFreqChange = int(time.time())
                     fsconfigutil.saveLastFreqChangeSetting()
                     
                     setModeStatus = 'Frequency changed to ' + newFreq
                     statusType = 'info'
-     
+
+        with open("/sys/class/amhdmitx/amhdmitx0/hdcp_mode", 'w') as modeFileamhdmitx:
+            modeFileamhdmitx.write('11')
+					
     return setModeStatus, statusType
 
 def getCurrentFPS():
@@ -357,6 +420,8 @@ def setDisplayModeAuto():
             
         mode60hz = currentRes + '-60hz'
         mode50hz = currentRes + '-50hz'
+        mode30hz = currentRes + '-30hz'
+        mode25hz = currentRes + '-25hz'
         mode24hz = currentRes + '-24hz'
         
         autoSync = []
@@ -373,7 +438,19 @@ def setDisplayModeAuto():
                                (fsconfig.edit50hzFps2, mode50hz), 
                                (fsconfig.edit50hzFps3, mode50hz), 
                                (fsconfig.edit50hzFps4, mode50hz)])
+
+        if fsconfig.radioAuto30hz:
+            syncConfig.extend([(fsconfig.edit30hzFps1, mode30hz), 
+                               (fsconfig.edit30hzFps2, mode30hz), 
+                               (fsconfig.edit30hzFps3, mode30hz), 
+                               (fsconfig.edit30hzFps4, mode30hz)])
              
+        if fsconfig.radioAuto25hz:
+            syncConfig.extend([(fsconfig.edit25hzFps1, mode25hz), 
+                               (fsconfig.edit25hzFps2, mode25hz), 
+                               (fsconfig.edit25hzFps3, mode25hz), 
+                               (fsconfig.edit25hzFps4, mode25hz)])
+
         if fsconfig.radioAuto24hz:
             syncConfig.extend([(fsconfig.edit24hzFps1, mode24hz), 
                                (fsconfig.edit24hzFps2, mode24hz),
